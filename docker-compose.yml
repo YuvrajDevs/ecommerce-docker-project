@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web-api:
+    build:
+      context: ./web-api
+    ports:
+      - "5000:5000"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=cache
+    volumes:
+      - ./web-api:/app
+    depends_on:
+      - db
+      - cache
+      - queue
+
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+
+  cache:
+    image: redis:6-alpine
+
+  queue:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  worker:
+    build:
+      context: ./worker 
+    depends_on:
+      - queue
+
+volumes:
+  pgdata: {}
+
